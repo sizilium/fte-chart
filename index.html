@@ -3,17 +3,28 @@
 <style>
 :root{--surface:#fcfcfb;--ink:#0b0b0b;--ink2:#52514e;--grid:#e6e5e1;--band:#f3f2ef;--s1:#2a78d6;--tip:#fff}
 @media (prefers-color-scheme:dark){:root{--surface:#1a1a19;--ink:#f0efec;--ink2:#c3c2b7;--grid:#383835;--band:#232322;--s1:#3987e5;--tip:#262624}}
-body{margin:0;background:var(--surface);color:var(--ink);font:14px/1.4 -apple-system,system-ui,sans-serif}
+*{box-sizing:border-box}
+body{margin:0;background:var(--surface);color:var(--ink);font:14px/1.4 -apple-system,system-ui,sans-serif;-webkit-text-size-adjust:100%}
 main{max-width:1100px;margin:0 auto;padding:24px 16px}
 h1{font-size:20px;margin:0 0 4px}.sub{color:var(--ink2);margin:0 0 16px}
 .stats{display:flex;gap:32px;flex-wrap:wrap;margin-bottom:12px}.stats b{display:block;font-size:22px}.stats .hero b{font-size:34px;color:var(--s1)}.stats span{color:var(--ink2);font-size:12px}
 .wrap{position:relative}svg{width:100%;height:auto;display:block}
 .axis text{fill:var(--ink2);font-size:11px}.gl{stroke:var(--grid)}
 .lbl{fill:var(--ink);font-size:12px;paint-order:stroke;stroke:var(--surface);stroke-width:4px}
+#hit{touch-action:pan-y;cursor:crosshair}
 #tip{position:absolute;pointer-events:none;background:var(--tip);border:1px solid var(--grid);border-radius:6px;padding:6px 8px;font-size:12px;display:none;max-width:280px;box-shadow:0 2px 8px #0002}
 .legend{display:flex;gap:8px;flex-wrap:wrap;margin:4px 0 4px 40px}.legend button{font:inherit;font-size:12px;color:var(--ink);background:none;border:1px solid var(--grid);border-radius:999px;padding:3px 10px;cursor:pointer}.legend button span{color:var(--s1);font-weight:700}.legend button[aria-pressed=false]{opacity:.4;text-decoration:line-through}
-.stat{font:inherit;color:inherit;text-align:left;background:none;border:1px solid var(--grid);border-radius:8px;padding:2px 10px;margin:-3px 0;cursor:pointer}.stat:hover{border-color:var(--s1)}.stats .stat span{color:var(--s1)}.rt{border-collapse:collapse;font-size:13px}.rt td,.rt th{padding:3px 10px;text-align:right;border-bottom:1px solid var(--grid)}
-details{margin-top:16px;color:var(--ink2)}table{border-collapse:collapse;font-size:12px}td,th{padding:2px 10px;text-align:right}
+.stat{font:inherit;color:inherit;text-align:left;background:none;border:1px solid var(--grid);border-radius:8px;padding:2px 10px;margin:-3px 0;cursor:pointer}.stat:hover{border-color:var(--s1)}.stats .stat span{color:var(--s1)}
+.scroll{overflow-x:auto;-webkit-overflow-scrolling:touch}
+.rt{border-collapse:collapse;font-size:13px}.rt td,.rt th{padding:3px 10px;text-align:right;border-bottom:1px solid var(--grid);white-space:nowrap}.rt .bar{width:160px}
+details{margin-top:16px;color:var(--ink2)}summary{cursor:pointer;padding:4px 0}table{border-collapse:collapse;font-size:12px}td,th{padding:2px 10px;text-align:right;white-space:nowrap}
+@media (max-width:600px){
+main{padding:16px 16px 32px}h1{font-size:18px}.sub{font-size:12px}
+.stats{display:grid;grid-template-columns:1fr 1fr;gap:12px 16px}.stats .hero{grid-column:1/-1}.stats b{font-size:18px}.stats .hero b{font-size:30px}.stats .stat{margin:0;padding:6px 10px}
+.legend{margin:8px 0}.legend button{padding:6px 12px}
+.rt{font-size:12px}.rt td,.rt th{padding:4px 6px}.rt .bar{width:60px}
+td,th{padding:4px 6px}
+}
 </style><meta property="og:title" content="Output per month in FTE">
 <meta property="og:description" content="Since 01/2026 my LOC output increased significantly">
 <meta property="og:type" content="website">
@@ -24,44 +35,55 @@ details{margin-top:16px;color:var(--ink2)}table{border-collapse:collapse;font-si
 <meta name="twitter:card" content="summary_large_image">
 </head><body><main>
 <h1>Output per month in FTE</h1>
-<p class="sub">1.0 FTE = my average LOC/month until 12/2025 (one normal full-time engineer) · rolf.englputzeder · unique non-merge commits<br>Excludes data files, docs, lockfiles, generated code, config dumps, translations, IDE/project files, copied code and duplicate (cherry-picked) commits</p>
+<p class="sub">1.0 FTE = my average changed lines/month until 12/2025 (one normal full-time engineer) · rolf.englputzeder · changed lines = per file max(added, deleted) · unique non-merge commits; a squash merge only counts lines not already counted in the commits it squashed<br>Excludes data files, docs, lockfiles, generated code, config dumps, translations, IDE/project files, copied code, cherry-picked/rebased duplicate commits and squash duplicates</p>
 <div class="stats" id="stats"></div>
-<div class="legend" id="lg"><button data-s="sX" aria-pressed="true"><span>━</span> lines added / month</button><button data-s="sMA" aria-pressed="true"><span>┅</span> 1 FTE, then 6-month moving average</button></div>
-<div class="wrap"><svg id="c" viewBox="0 0 1000 400" role="img" aria-label="Monthly lines added as multiple of FTE baseline, before and after January 2026"></svg><div id="tip"></div></div>
-<div id="rp" hidden><h2 style="font-size:15px;margin:16px 0 6px">Repos</h2><table id="rt" class="rt"><tr><th style="text-align:left">Repo</th><th>Lines added</th><th></th><th>Commits</th><th>Active</th></tr></table></div>
-<details><summary>Table view</summary><table id="t"><tr><th>Month</th><th>Added</th><th>FTE</th><th>Trend FTE</th><th>Deleted</th><th>Commits</th><th>Repos</th></tr></table></details>
+<div class="legend" id="lg"><button data-s="sX" aria-pressed="true"><span>━</span> changed lines / month</button><button data-s="sMA" aria-pressed="true"><span>┅</span> 1 FTE, then 6-month moving average</button></div>
+<div class="wrap"><svg id="c" role="img" aria-label="Monthly changed lines as multiple of FTE baseline, before and after January 2026"></svg><div id="tip"></div></div>
+<div id="rp" hidden><h2 style="font-size:15px;margin:16px 0 6px">Repos</h2><div class="scroll"><table id="rt" class="rt"><tr><th style="text-align:left">Repo</th><th>Changed lines</th><th></th><th>Commits</th><th>Active</th></tr></table></div></div>
+<details><summary>Table view</summary><div class="scroll"><table id="t"><tr><th>Month</th><th>Changed</th><th>FTE</th><th>Trend FTE</th><th>Deleted</th><th>Commits</th><th>Repos</th></tr></table></div></details>
 </main><script>
-const D=[{"m":"2024-08","a":68,"d":277,"c":2,"r":["Repo A"]},{"m":"2024-09","a":907,"d":1618,"c":27,"r":["Repo A"]},{"m":"2024-10","a":866,"d":677,"c":19,"r":["Repo A"]},{"m":"2024-11","a":13635,"d":68922,"c":33,"r":["Repo A"]},{"m":"2024-12","a":5035,"d":5988,"c":30,"r":["Repo A"]},{"m":"2025-01","a":1344,"d":2745,"c":29,"r":["Repo A"]},{"m":"2025-02","a":1433,"d":857,"c":18,"r":["Repo A"]},{"m":"2025-03","a":5120,"d":2487,"c":66,"r":["Repo E","Repo A"]},{"m":"2025-04","a":544,"d":660,"c":34,"r":["Repo A"]},{"m":"2025-05","a":1520,"d":719,"c":27,"r":["Repo A"]},{"m":"2025-06","a":1369,"d":975,"c":14,"r":["Repo A"]},{"m":"2025-07","a":520,"d":425,"c":24,"r":["Repo A"]},{"m":"2025-08","a":133,"d":75,"c":8,"r":["Repo I","Repo A"]},{"m":"2025-09","a":1961,"d":1295,"c":31,"r":["Repo A"]},{"m":"2025-10","a":991,"d":574,"c":16,"r":["Repo I","Repo A"]},{"m":"2025-11","a":940,"d":330,"c":14,"r":["Repo I","Repo A"]},{"m":"2025-12","a":3639,"d":2670,"c":58,"r":["Repo I","Repo A"]},{"m":"2026-01","a":6117,"d":1871,"c":34,"r":["Repo I","Repo A"]},{"m":"2026-02","a":375,"d":181,"c":19,"r":["Repo I","Repo A"]},{"m":"2026-03","a":27619,"d":25799,"c":122,"r":["Repo B","Repo F","Repo E","Repo A","Repo D"]},{"m":"2026-04","a":22902,"d":3722,"c":93,"r":["Repo B","Repo K","Repo F","Repo E","Repo A","Repo D"]},{"m":"2026-05","a":29498,"d":4958,"c":202,"r":["Repo B","Repo K","Repo P","Repo J","Repo F","Repo E","Repo L","Repo A","Repo D"]},{"m":"2026-06","a":76155,"d":19403,"c":260,"r":["Repo B","Repo G","Repo K","Repo J","Repo M","Repo F","Repo E","Repo O","Repo L","Repo A","Repo D"]},{"m":"2026-07","a":70243,"d":11495,"c":209,"r":["Repo B","Repo G","Repo A","Repo D"]},{"m":"2026-08","a":25005,"d":3145,"c":113,"r":["Repo B","Repo A","Repo D"]},{"m":"2026-09","a":92111,"d":12343,"c":521,"r":["Repo B","Repo N","Repo C","Repo G","Repo M","Repo E","Repo A","Repo D"]},{"m":"2026-10","a":97088,"d":10141,"c":317,"r":["Repo B","Repo I","Repo C","Repo G","Repo H","Repo A"]}];
+const D=[{"m":"2024-08","a":85,"d":277,"c":2,"r":["Repo A"]},{"m":"2024-09","a":1388,"d":1647,"c":58,"r":["Repo A"]},{"m":"2024-10","a":1450,"d":959,"c":28,"r":["Repo A"]},{"m":"2024-11","a":11121,"d":56453,"c":39,"r":["Repo A"]},{"m":"2024-12","a":5282,"d":5994,"c":34,"r":["Repo A"]},{"m":"2025-01","a":1151,"d":1614,"c":29,"r":["Repo A"]},{"m":"2025-02","a":887,"d":486,"c":17,"r":["Repo A"]},{"m":"2025-03","a":4349,"d":2053,"c":72,"r":["Repo A","Repo E"]},{"m":"2025-04","a":660,"d":470,"c":39,"r":["Repo A"]},{"m":"2025-05","a":1278,"d":528,"c":30,"r":["Repo A"]},{"m":"2025-06","a":1099,"d":681,"c":16,"r":["Repo A"]},{"m":"2025-07","a":465,"d":294,"c":25,"r":["Repo A"]},{"m":"2025-08","a":69,"d":31,"c":8,"r":["Repo A","Repo I"]},{"m":"2025-09","a":1095,"d":700,"c":31,"r":["Repo A"]},{"m":"2025-10","a":880,"d":348,"c":16,"r":["Repo A","Repo I"]},{"m":"2025-11","a":960,"d":350,"c":16,"r":["Repo A","Repo I"]},{"m":"2025-12","a":3350,"d":2162,"c":71,"r":["Repo A","Repo I"]},{"m":"2026-01","a":4325,"d":1312,"c":35,"r":["Repo A","Repo I"]},{"m":"2026-02","a":234,"d":107,"c":22,"r":["Repo A","Repo I"]},{"m":"2026-03","a":27366,"d":25656,"c":126,"r":["Repo A","Repo B","Repo D","Repo E","Repo F"]},{"m":"2026-04","a":23397,"d":3704,"c":92,"r":["Repo A","Repo B","Repo D","Repo E","Repo F","Repo J"]},{"m":"2026-05","a":29684,"d":4816,"c":208,"r":["Repo A","Repo B","Repo D","Repo E","Repo F","Repo J","Repo K","Repo L","Repo P"]},{"m":"2026-06","a":75309,"d":18198,"c":260,"r":["Repo A","Repo B","Repo D","Repo E","Repo F","Repo G","Repo J","Repo K","Repo L","Repo M","Repo O"]},{"m":"2026-07","a":53196,"d":8917,"c":208,"r":["Repo A","Repo B","Repo D","Repo G"]},{"m":"2026-08","a":23735,"d":2894,"c":114,"r":["Repo A","Repo B","Repo D"]},{"m":"2026-09","a":88070,"d":11545,"c":520,"r":["Repo A","Repo B","Repo C","Repo D","Repo E","Repo G","Repo M","Repo N"]},{"m":"2026-10","a":103916,"d":10192,"c":373,"r":["Repo A","Repo B","Repo C","Repo D","Repo G","Repo H","Repo I"]}];
 const CUT='2026-01',fmt=n=>n.toLocaleString('en-US'),last=D.length-1,f1=v=>v.toFixed(1)+' FTE';
-const REPOS=[...new Set(D.flatMap(r=>r.r))].sort(),RS=[{"n":"Repo A","a":207087,"c":966,"first":"2024-08","last":"2026-10"},{"n":"Repo B","a":131378,"c":655,"first":"2026-03","last":"2026-10"},{"n":"Repo C","a":37476,"c":228,"first":"2026-09","last":"2026-10"},{"n":"Repo D","a":24766,"c":93,"first":"2026-03","last":"2026-09"},{"n":"Repo E","a":22385,"c":87,"first":"2025-03","last":"2026-09"},{"n":"Repo F","a":19139,"c":101,"first":"2026-03","last":"2026-06"},{"n":"Repo G","a":15978,"c":34,"first":"2026-06","last":"2026-10"},{"n":"Repo H","a":10745,"c":24,"first":"2026-10","last":"2026-10"},{"n":"Repo I","a":7112,"c":60,"first":"2025-08","last":"2026-10"},{"n":"Repo J","a":4057,"c":23,"first":"2026-05","last":"2026-06"},{"n":"Repo K","a":4024,"c":42,"first":"2026-04","last":"2026-06"},{"n":"Repo L","a":2535,"c":18,"first":"2026-05","last":"2026-06"},{"n":"Repo M","a":235,"c":3,"first":"2026-06","last":"2026-09"},{"n":"Repo N","a":144,"c":2,"first":"2026-09","last":"2026-09"},{"n":"Repo O","a":60,"c":1,"first":"2026-06","last":"2026-06"},{"n":"Repo P","a":17,"c":3,"first":"2026-05","last":"2026-05"}];
-const pre=D.filter(r=>r.m<CUT),post=D.slice(0,last).filter(r=>r.m>=CUT); // current month is partial -> not averaged
+const REPOS=[...new Set(D.flatMap(r=>r.r))].sort(),RS=[{"n":"Repo A","a":172965,"c":1071,"first":"2024-08","last":"2026-10"},{"n":"Repo B","a":139278,"c":678,"first":"2026-03","last":"2026-10"},{"n":"Repo C","a":41469,"c":230,"first":"2026-09","last":"2026-10"},{"n":"Repo D","a":23003,"c":95,"first":"2026-03","last":"2026-10"},{"n":"Repo E","a":22930,"c":87,"first":"2025-03","last":"2026-09"},{"n":"Repo F","a":19494,"c":102,"first":"2026-03","last":"2026-06"},{"n":"Repo G","a":14758,"c":43,"first":"2026-06","last":"2026-10"},{"n":"Repo H","a":12122,"c":28,"first":"2026-10","last":"2026-10"},{"n":"Repo I","a":7287,"c":61,"first":"2025-08","last":"2026-10"},{"n":"Repo J","a":4404,"c":43,"first":"2026-04","last":"2026-06"},{"n":"Repo K","a":4070,"c":24,"first":"2026-05","last":"2026-06"},{"n":"Repo L","a":2562,"c":18,"first":"2026-05","last":"2026-06"},{"n":"Repo M","a":236,"c":3,"first":"2026-06","last":"2026-09"},{"n":"Repo N","a":144,"c":2,"first":"2026-09","last":"2026-09"},{"n":"Repo O","a":60,"c":1,"first":"2026-06","last":"2026-06"},{"n":"Repo P","a":19,"c":3,"first":"2026-05","last":"2026-05"}];
+const pre=D.slice(1).filter(r=>r.m<CUT),post=D.slice(0,last).filter(r=>r.m>=CUT); // first and current month are partial -> not averaged
 const avg=a=>a.reduce((s,r)=>s+r.a,0)/a.length,BASE=avg(pre),POST=avg(post),FACT=POST/BASE;
 const X=D.map(r=>r.a/BASE),CI=D.findIndex(r=>r.m===CUT),MA=X.map((v,i)=>{if(i<CI)return 1;const w=X.slice(Math.max(CI,i-5),i+1);return w.reduce((a,b)=>a+b,0)/w.length});
-const tot=D.reduce((s,r)=>s+r.a,0),com=D.reduce((s,r)=>s+r.c,0),ci=D.findIndex(r=>r.m===CUT);
-document.getElementById('stats').innerHTML=[[f1(FACT),'avg output from 01/2026 (before: 1.0 FTE)','hero'],[fmt(Math.round(BASE)),'LOC/month = 1.0 FTE ('+pre[0].m+' – 2025-12)'],[fmt(Math.round(POST)),'LOC/month ('+CUT+' – '+post.at(-1).m+')'],[fmt(tot),'lines added total'],[fmt(com),'commits'],[REPOS.length,'repos ▸','btn']].map(([v,l,c])=>c==='btn'?'<button id="rb" class="stat" aria-expanded="false"><b>'+v+'</b><span>'+l+'</span></button>':'<div class="'+(c||'')+'"><b>'+v+'</b><span>'+l+'</span></div>').join('');
-const W=1000,H=400,m={l:56,r:16,t:16,b:32},iw=W-m.l-m.r,ih=H-m.t-m.b;
-const max=Math.ceil(Math.max(...X)/5)*5,x=i=>m.l+i*iw/last,y=v=>m.t+ih-v/max*ih,xc=(x(ci-1)+x(ci))/2;
+const tot=D.reduce((s,r)=>s+r.a,0),com=D.reduce((s,r)=>s+r.c,0),ci=CI;
+document.getElementById('stats').innerHTML=[[f1(FACT),'avg output from 01/2026 (before: 1.0 FTE)','hero'],[fmt(Math.round(BASE)),'changed lines/month = 1.0 FTE ('+pre[0].m+' – 2025-12)'],[fmt(Math.round(POST)),'changed lines/month ('+CUT+' – '+post.at(-1).m+')'],[fmt(tot),'changed lines total'],[fmt(com),'commits'],[REPOS.length,'repos ▸','btn']].map(([v,l,c])=>c==='btn'?'<button id="rb" class="stat" aria-expanded="false"><b>'+v+'</b><span>'+l+'</span></button>':'<div class="'+(c||'')+'"><b>'+v+'</b><span>'+l+'</span></div>').join('');
+const svg=document.getElementById('c'),tip=document.getElementById('tip');
+let W,H,m,iw,ih,x,y,xh,dot,hit,shown=-1;
+function draw(){ // drawn in real pixels so text stays readable on phones
+W=Math.max(300,svg.parentNode.clientWidth);const sm=W<600;H=sm?Math.round(Math.min(360,W*.8)):400;
+m={l:sm?46:56,r:sm?10:16,t:sm?30:16,b:28};iw=W-m.l-m.r;ih=H-m.t-m.b;
+const mx=Math.max(...X),st=Math.max(5,Math.ceil(mx/(sm?4:6)/5)*5),max=Math.ceil(mx/st)*st;x=i=>m.l+i*iw/last;y=v=>m.t+ih-v/max*ih;const xc=(x(ci-1)+x(ci))/2;
+svg.setAttribute('viewBox','0 0 '+W+' '+H);
 let s='<rect x="'+xc+'" y="'+m.t+'" width="'+(W-m.r-xc)+'" height="'+ih+'" fill="var(--band)"/><g class="axis">';
-for(let v=0;v<=max;v+=5){s+='<line class="gl" x1="'+m.l+'" x2="'+(W-m.r)+'" y1="'+y(v)+'" y2="'+y(v)+'"/><text x="'+(m.l-6)+'" y="'+(y(v)+4)+'" text-anchor="end">'+v+' FTE</text>'}
-D.forEach((r,i)=>{if(+r.m.slice(5)%3===1)s+='<text x="'+x(i)+'" y="'+(H-10)+'" text-anchor="'+(i===last?'end':'middle')+'">'+r.m+'</text>'});
+for(let v=0;v<=max;v+=st){s+='<line class="gl" x1="'+m.l+'" x2="'+(W-m.r)+'" y1="'+y(v)+'" y2="'+y(v)+'"/><text x="'+(m.l-6)+'" y="'+(y(v)+4)+'" text-anchor="end">'+v+' FTE</text>'}
+const ev=sm?6:3;D.forEach((r,i)=>{if((+r.m.slice(5)-1)%ev===0&&x(last)-x(i)>(sm?34:0)||i===last&&!sm)s+='<text x="'+x(i)+'" y="'+(H-10)+'" text-anchor="'+(i===last?'end':i===0?'start':'middle')+'">'+(sm?r.m.slice(5)+'/'+r.m.slice(2,4):r.m)+'</text>'});
 s+='</g><line x1="'+xc+'" x2="'+xc+'" y1="'+m.t+'" y2="'+(m.t+ih)+'" stroke="var(--ink2)"/>';
-s+='<text class="lbl" x="'+(xc-8)+'" y="'+(m.t+16)+'" text-anchor="end" style="fill:var(--ink2)">1 normal FTE period</text><text class="lbl" x="'+(xc+8)+'" y="'+(m.t+16)+'" style="fill:var(--ink2)">from 01/2026</text>';
-
+const ly=sm?m.t-10:m.t+16;
+s+='<text class="lbl" x="'+(xc-8)+'" y="'+ly+'" text-anchor="end" style="fill:var(--ink2)">'+(sm?'baseline':'1 normal FTE period')+'</text><text class="lbl" x="'+(xc+8)+'" y="'+ly+'" style="fill:var(--ink2)">from 01/2026</text>';
 const path=a=>a.map((v,i)=>(i?'L':'M')+x(i).toFixed(1)+','+y(v).toFixed(1)).join('');
-s+='<g id="sMA">'+'<path d="'+path(MA)+'" fill="none" stroke="var(--s1)" stroke-width="3.5" stroke-dasharray="2 5" stroke-linecap="round" stroke-linejoin="round"/>'+'<circle cx="'+x(last)+'" cy="'+y(MA[last])+'" r="5" fill="var(--s1)" stroke="var(--surface)" stroke-width="2"/><text class="lbl" data-s="sMA" x="'+(x(last)-10)+'" y="'+(y(MA[last])+4)+'" text-anchor="end" style="font-weight:700">'+f1(MA[last])+'</text>'+'</g>';
+s+='<g id="sMA">'+'<path d="'+path(MA)+'" fill="none" stroke="var(--s1)" stroke-width="'+(sm?3:3.5)+'" stroke-dasharray="2 5" stroke-linecap="round" stroke-linejoin="round"/>'+'<circle cx="'+x(last)+'" cy="'+y(MA[last])+'" r="5" fill="var(--s1)" stroke="var(--surface)" stroke-width="2"/><text class="lbl" data-s="sMA" x="'+(x(last)-10)+'" y="'+(y(MA[last])+4)+'" text-anchor="end" style="font-weight:700">'+f1(MA[last])+'</text>'+'</g>';
 s+='<g id="sX">'+'<path d="'+path(X)+'" fill="none" stroke="var(--s1)" stroke-width="2" stroke-linejoin="round"/>'+'</g>';
-
 s+='<line id="xh" y1="'+m.t+'" y2="'+(m.t+ih)+'" style="display:none;stroke:var(--ink2)"/><circle id="dot" r="4" fill="var(--s1)" stroke="var(--surface)" stroke-width="2" style="display:none"/><rect x="'+m.l+'" y="'+m.t+'" width="'+iw+'" height="'+ih+'" fill="transparent" id="hit"/>';
-const svg=document.getElementById('c');svg.innerHTML=s;
-svg.querySelectorAll('text.lbl').forEach(t=>svg.insertBefore(t,document.getElementById('xh'))); // labels above lines
-const tip=document.getElementById('tip'),xh=document.getElementById('xh'),dot=document.getElementById('dot'),hit=document.getElementById('hit');
-hit.addEventListener('mousemove',e=>{const b=svg.getBoundingClientRect(),px=(e.clientX-b.left)*W/b.width,i=Math.max(0,Math.min(last,Math.round((px-m.l)/iw*last))),r=D[i];
+svg.innerHTML=s;xh=document.getElementById('xh');dot=document.getElementById('dot');hit=document.getElementById('hit');
+svg.querySelectorAll('text.lbl').forEach(t=>svg.insertBefore(t,xh)); // labels above lines
+document.querySelectorAll('#lg button').forEach(b=>toggle(b,b.getAttribute('aria-pressed')==='true'));
+hit.addEventListener('pointermove',show);hit.addEventListener('pointerdown',show);
+hit.addEventListener('pointerleave',e=>{if(e.pointerType==='mouse')hide()});
+if(shown>=0)show(null,shown)}
+function show(e,j){const b=svg.getBoundingClientRect(),i=j??Math.max(0,Math.min(last,Math.round(((e.clientX-b.left)*W/b.width-m.l)/iw*last))),r=D[i];shown=i;
 xh.setAttribute('x1',x(i));xh.setAttribute('x2',x(i));xh.style.display='';dot.setAttribute('cx',x(i));dot.setAttribute('cy',y(X[i]));dot.style.display='';
-tip.innerHTML='<b>'+r.m+(i===last?' (so far)':'')+' · '+f1(X[i])+'</b><br>+'+fmt(r.a)+' / −'+fmt(r.d)+' LOC<br>trend '+f1(MA[i])+'<br>'+r.c+' commits · '+r.r.length+' repo'+(r.r.length==1?'':'s')+(r.r.length?'<br><span style="color:var(--ink2)">'+r.r.join(', ')+'</span>':'');tip.style.display='block';
-const sx=x(i)*b.width/W;tip.style.left=(sx>b.width*0.65?sx-tip.offsetWidth-12:sx+12)+'px';tip.style.top='24px'});
-hit.addEventListener('mouseleave',()=>{tip.style.display=xh.style.display=dot.style.display='none'});
-document.querySelectorAll('#lg button').forEach(b=>b.onclick=()=>{const on=b.getAttribute('aria-pressed')!=='true';b.setAttribute('aria-pressed',on);[document.getElementById(b.dataset.s),...svg.querySelectorAll('[data-s='+b.dataset.s+']')].forEach(e=>e.style.display=on?'':'none')});
-const ra=Math.max(...RS.map(r=>r.a));document.getElementById('rt').insertAdjacentHTML('beforeend',RS.map(r=>'<tr><td style="text-align:left">'+r.n+'</td><td>'+fmt(r.a)+'</td><td style="width:160px"><div style="height:8px;border-radius:0 4px 4px 0;background:var(--s1);width:'+Math.max(1,r.a/ra*100)+'%"></div></td><td>'+r.c+'</td><td>'+(r.first===r.last?r.first:r.first+' – '+r.last)+'</td></tr>').join(''));
+tip.innerHTML='<b>'+r.m+(i===last?' (so far)':'')+' · '+f1(X[i])+'</b><br>'+fmt(r.a)+' changed lines (−'+fmt(r.d)+' deleted)<br>trend '+f1(MA[i])+'<br>'+r.c+' commits · '+r.r.length+' repo'+(r.r.length==1?'':'s')+(r.r.length?'<br><span style="color:var(--ink2)">'+r.r.join(', ')+'</span>':'');tip.style.display='block';
+tip.style.maxWidth=Math.min(280,b.width-16)+'px';const sx=x(i)*b.width/W,tw=tip.offsetWidth;let l=sx>b.width*.6?sx-tw-12:sx+12;tip.style.left=Math.max(0,Math.min(b.width-tw,l))+'px';tip.style.top=(W<600?m.t+8:24)+'px'}
+function hide(){shown=-1;tip.style.display=xh.style.display=dot.style.display='none'}
+function toggle(b,on){b.setAttribute('aria-pressed',on);[document.getElementById(b.dataset.s),...svg.querySelectorAll('[data-s='+b.dataset.s+']')].forEach(e=>e.style.display=on?'':'none')}
+document.querySelectorAll('#lg button').forEach(b=>b.onclick=()=>toggle(b,b.getAttribute('aria-pressed')!=='true'));
+document.addEventListener('pointerdown',e=>{if(e.target!==hit)hide()});
+let rz;new ResizeObserver(()=>{cancelAnimationFrame(rz);rz=requestAnimationFrame(()=>{if(Math.max(300,svg.parentNode.clientWidth)!==W)draw()})}).observe(svg.parentNode);
+draw();
+const ra=Math.max(...RS.map(r=>r.a));document.getElementById('rt').insertAdjacentHTML('beforeend',RS.map(r=>'<tr><td style="text-align:left">'+r.n+'</td><td>'+fmt(r.a)+'</td><td class="bar"><div style="height:8px;border-radius:0 4px 4px 0;background:var(--s1);width:'+Math.max(1,r.a/ra*100)+'%"></div></td><td>'+r.c+'</td><td>'+(r.first===r.last?r.first:r.first+' – '+r.last)+'</td></tr>').join(''));
 const rb=document.getElementById('rb'),rp=document.getElementById('rp');rb.onclick=()=>{const o=rp.hidden;rp.hidden=!o;rb.setAttribute('aria-expanded',o);rb.querySelector('span').textContent='repos '+(o?'▾':'▸');if(o)rp.scrollIntoView({behavior:'smooth',block:'nearest'})};
 document.getElementById('t').insertAdjacentHTML('beforeend',D.map((r,i)=>'<tr><td>'+r.m+'</td><td>'+fmt(r.a)+'</td><td>'+f1(X[i])+'</td><td>'+f1(MA[i])+'</td><td>'+fmt(r.d)+'</td><td>'+r.c+'</td><td>'+r.r.length+'</td></tr>').join(''));
 </script></body></html>
